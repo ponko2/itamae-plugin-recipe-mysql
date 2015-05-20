@@ -1,0 +1,8 @@
+<% node[:mysql][:databases].each do |database| %>
+CREATE DATABASE IF NOT EXISTS `<%= database[:name] %>` DEFAULT CHARACTER SET <%= database[:charset] %> DEFAULT COLLATE <%= database[:collate] %>;
+<%   database[:privileges].each do |p| -%>
+<%     unless p[:types].empty? -%>
+GRANT <%= p[:types].join(',') %> ON `<%= database[:name] %>`.* TO '<%= p[:user] %>'@'<%= p[:host] %>' IDENTIFIED BY '<%= p[:password] %>' WITH GRANT OPTION;
+<%     end -%>
+<%   end -%>
+<% end -%>

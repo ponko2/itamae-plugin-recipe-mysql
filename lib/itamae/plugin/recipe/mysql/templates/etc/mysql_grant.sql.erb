@@ -1,0 +1,26 @@
+<% if node[:mysql][:server_repl_password] -%>
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%' identified by '<%= node[:mysql][:server_repl_password] %>';
+<% end -%>
+
+<% if node[:mysql][:allow_remote_root] -%>
+GRANT ALL ON *.* TO 'root'@'%' IDENTIFIED BY '<%= node[:mysql][:server_root_password] %>' WITH GRANT OPTION;
+<% else %>
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+UPDATE mysql.user SET Password=PASSWORD('<%= node[:mysql][:server_root_password] %>') WHERE User='root';
+<% end -%>
+
+<% if node[:mysql][:remove_anonymous_users] -%>
+DELETE FROM mysql.user WHERE User='';
+<% end -%>
+
+<% if node[:mysql][:remove_test_database] -%>
+DROP DATABASE IF EXISTS test;
+DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
+<% end -%>
+
+SET PASSWORD FOR 'root'@'localhost' = PASSWORD('<%= node[:mysql][:server_root_password] %>');
+SET PASSWORD FOR 'root'@'127.0.0.1' = PASSWORD('<%= node[:mysql][:server_root_password] %>');
+
+<% node[:mysql][:root_network_acl].each do |acl| -%>
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'<%= acl %>' IDENTIFIED BY '<%= node[:mysql][:server_root_password] %>' WITH GRANT OPTION;
+<% end -%>
